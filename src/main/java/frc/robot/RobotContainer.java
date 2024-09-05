@@ -4,39 +4,48 @@
 
 package frc.robot;
 
-import frc.robot.Constants.OperatorConstants;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
+import java.util.HashMap;
 
-/**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and trigger mappings) should be declared here.
- */
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
+
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import frc.robot.subsystems.Swerve.DriveConstants;
+import frc.robot.utility.IO;
+
 public class RobotContainer {
-  // The robot's subsystems and commands are defined here...
+  SendableChooser<Runnable> bindings = new SendableChooser<Runnable>();
+  SendableChooser<Command> autos;
+  HashMap<String, Command> commands = new HashMap<>();
 
-  // Replace with CommandPS4Controller or CommandJoystick if needed
-  private final CommandXboxController m_driverController =
-      new CommandXboxController(OperatorConstants.kDriverControllerPort);
+  public IO io = new IO(bindings);
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer() {
-    // Configure the trigger bindings
-    configureBindings();
+    // addAutos();
+
+    autos = AutoBuilder.buildAutoChooser("Speaker Rings Centre");
+    // autos.addOption("Adaptive Path", new AdaptivePath());
+ 
+    SmartDashboard.putData("Autos",autos);
+    SmartDashboard.putData("Bindings", bindings);
+    SmartDashboard.putData("Autonomous", new SequentialCommandGroup(
+      new InstantCommand(() -> io.chassis.DRIVE_MODE = DriveConstants.FIELD_ORIENTED),
+      new InstantCommand(autos.getSelected()::schedule)));
+
+      io.configGlobal();
   }
 
-  /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
-   * predicate, or via the named factories in {@link
-   * edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for {@link
-   * CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller
-   * PS4} controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight
-   * joysticks}.
-   */
-  private void configureBindings() {
+  // public void addAutos() {
+  //   NamedCommands.registerCommands(commands);
+  // }
 
+  public Command getAutonomousCommand() {
+    return new SequentialCommandGroup(
+        new InstantCommand(() -> io.chassis.DRIVE_MODE = DriveConstants.FIELD_ORIENTED),
+        autos.getSelected());
   }
 }
